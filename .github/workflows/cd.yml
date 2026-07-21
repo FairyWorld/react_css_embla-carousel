@@ -4,6 +4,10 @@ on:
   release:
     types: [created]
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -28,12 +32,10 @@ jobs:
         id: npm_tag
         run: |
           if [[ "${{ github.event.release.tag_name }}" == *"-rc"* ]]; then
-            echo "tag=next" >> $GITHUB_OUTPUT
+            echo "tag=next" >> "$GITHUB_OUTPUT"
           else
-            echo "tag=latest" >> $GITHUB_OUTPUT
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
           fi
 
       - name: NPM PKG Publish 🎉
-        run: yarn workspaces foreach -t --exclude '{embla-carousel-monorepo,embla-carousel-website,embla-carousel-playground-vanilla,embla-carousel-playground-react,embla-carousel-playground-solid,embla-carousel-playground-vue,embla-carousel-playground-svelte}' npm publish --tag ${{ steps.npm_tag.outputs.tag }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --workspaces --access public --tag ${{ steps.npm_tag.outputs.tag }} --provenance
