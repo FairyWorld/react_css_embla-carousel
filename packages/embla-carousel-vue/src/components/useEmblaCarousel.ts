@@ -1,10 +1,18 @@
-import { Ref, MaybeRef, isRef, watch, onBeforeUnmount, shallowRef } from 'vue'
+import {
+  Ref,
+  MaybeRefOrGetter,
+  toValue,
+  watch,
+  onBeforeUnmount,
+  shallowRef
+} from 'vue'
 import { areOptionsEqual, arePluginsEqual } from 'embla-carousel-reactive-utils'
 import EmblaCarousel, {
   EmblaCarouselType,
   EmblaOptionsType,
   EmblaPluginType
 } from 'embla-carousel'
+import { isWatchSource } from './utils'
 
 export type UseEmblaCarouselType = [
   Ref<HTMLElement | undefined>,
@@ -13,16 +21,13 @@ export type UseEmblaCarouselType = [
 ]
 
 function useEmblaCarousel(
-  options: MaybeRef<EmblaOptionsType> = {},
-  plugins: MaybeRef<EmblaPluginType[]> = []
+  options?: MaybeRefOrGetter<EmblaOptionsType | undefined>,
+  plugins?: MaybeRefOrGetter<EmblaPluginType[] | undefined>
 ): UseEmblaCarouselType {
   EmblaCarousel.globalOptions = useEmblaCarousel.globalOptions
 
-  const isRefOptions = isRef(options)
-  const isRefPlugins = isRef(plugins)
-
-  let storedOptions = isRefOptions ? options.value : options
-  let storedPlugins = isRefPlugins ? plugins.value : plugins
+  let storedOptions = toValue(options) ?? {}
+  let storedPlugins = toValue(plugins) ?? []
 
   const serverApi = EmblaCarousel(null, storedOptions, storedPlugins)
   const clientApi = shallowRef<EmblaCarouselType>()
@@ -53,18 +58,20 @@ function useEmblaCarousel(
     if (clientApi.value) clientApi.value.destroy()
   })
 
-  if (isRefOptions) {
+  if (isWatchSource(options)) {
     watch(options, (newOptions) => {
-      if (areOptionsEqual(storedOptions, newOptions)) return
-      storedOptions = newOptions
+      const nextOptions = newOptions ?? {}
+      if (areOptionsEqual(storedOptions, nextOptions)) return
+      storedOptions = nextOptions
       reInit()
     })
   }
 
-  if (isRefPlugins) {
+  if (isWatchSource(plugins)) {
     watch(plugins, (newPlugins) => {
-      if (arePluginsEqual(storedPlugins, newPlugins)) return
-      storedPlugins = newPlugins
+      const nextPlugins = newPlugins ?? []
+      if (arePluginsEqual(storedPlugins, nextPlugins)) return
+      storedPlugins = nextPlugins
       reInit()
     })
   }
