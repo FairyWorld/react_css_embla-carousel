@@ -1,4 +1,8 @@
-export { EmblaOptionsType, OptionsType } from './components/Options'
+export {
+  DragFreeOptionType,
+  EmblaOptionsType,
+  OptionsType
+} from './components/Options'
 export {
   EmblaEventType,
   EmblaEventCallbackType,
